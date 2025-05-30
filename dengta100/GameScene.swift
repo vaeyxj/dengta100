@@ -27,18 +27,27 @@ class GameScene: SKScene {
     var currentExp: Int = 0
     var maxExp: Int = 100
     var gameTime: TimeInterval = 0
+    var currentFloor: Int = 1
     
     // MARK: - 更新相关
     private var lastUpdateTime: TimeInterval = 0
     
     // MARK: - 场景加载
-    override func sceneDidLoad() {
-        setupScene()
+    override func didMove(to view: SKView) {
+        // 设置场景背景色，避免黑屏
+        backgroundColor = SKColor.darkGray
+        
+        setupPhysics()
+        
+        // 使用新的关卡生成器创建多层建筑场景
+        LevelGenerator.generateMultiFloorLevel(scene: self, floorNumber: currentFloor)
+        
         setupPlayer()
         setupControls()
         setupUI()
-        setupEnemies()
-        setupPhysics()
+        
+        // 添加关卡信息显示
+        showFloorInfo()
     }
     
     private func setupScene() {
@@ -65,6 +74,7 @@ class GameScene: SKScene {
             x: -size.width/2 + 100,
             y: -size.height/2 + 100
         )
+        virtualJoystick.zPosition = 1000  // 设置较高的z值，但低于UI
         addChild(virtualJoystick)
         
         // 创建射击区域
@@ -72,11 +82,13 @@ class GameScene: SKScene {
         shootingArea.delegate = self
         shootingArea.position = CGPoint(x: size.width/4, y: 0)
         shootingArea.isAutoFire = true
+        shootingArea.zPosition = 1000  // 设置较高的z值，但低于UI
         addChild(shootingArea)
     }
     
     private func setupUI() {
         gameUI = GameUI(screenSize: size)
+        // 直接将UI添加到场景，确保UI始终显示
         addChild(gameUI)
         
         // 初始化UI显示
@@ -91,6 +103,11 @@ class GameScene: SKScene {
     private func setupPhysics() {
         physicsWorld.contactDelegate = self
         physicsWorld.gravity = CGVector.zero
+    }
+    
+    private func setupCamera() {
+        // 暂时移除相机设置，使用默认场景坐标系
+        // 这样可以避免黑屏问题
     }
     
     // MARK: - 敌人生成
@@ -229,6 +246,54 @@ class GameScene: SKScene {
         // 显示经验获得提示
         gameUI.showMessage("+\(expGain) EXP", duration: 1.5)
     }
+    
+    private func showFloorInfo() {
+        let floorLabel = SKLabelNode(text: "第 \(currentFloor) 层")
+        floorLabel.fontName = "Arial-Bold"
+        floorLabel.fontSize = 24
+        floorLabel.fontColor = .yellow
+        floorLabel.position = CGPoint(x: 0, y: size.height/2 - 100)
+        floorLabel.zPosition = 200
+        floorLabel.name = "floorLabel"
+        addChild(floorLabel)
+        
+        // 3秒后淡出
+        let wait = SKAction.wait(forDuration: 3.0)
+        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
+        let remove = SKAction.removeFromParent()
+        floorLabel.run(SKAction.sequence([wait, fadeOut, remove]))
+    }
+    
+    // 添加关卡切换功能
+    func nextFloor() {
+        currentFloor += 1
+        
+        // 保存玩家状态
+        let playerHP = player.currentHP
+        let playerLevel = currentLevel
+        let playerExp = currentExp
+        let playerWeapon = player.currentWeapon
+        
+        // 生成新关卡
+        LevelGenerator.generateMultiFloorLevel(scene: self, floorNumber: currentFloor)
+        
+        // 重新设置玩家
+        setupPlayer()
+        player.currentHP = playerHP
+        currentLevel = playerLevel
+        currentExp = playerExp
+        player.currentWeapon = playerWeapon
+        
+        // 重新设置控制和UI
+        setupControls()
+        setupUI()
+        
+        // 显示关卡信息
+        showFloorInfo()
+        
+        // 更新PRD文档中的进度
+        gameUI.showMessage("进入第 \(currentFloor) 层！", duration: 2.0)
+    }
 }
 
 // MARK: - 虚拟摇杆代理
@@ -307,6 +372,26 @@ extension GameScene: SKPhysicsContactDelegate {
             let bullet = (bodyA.categoryBitMask == PhysicsCategory.playerBullet || bodyA.categoryBitMask == PhysicsCategory.enemyBullet) ? bodyA.node as? Bullet : bodyB.node as? Bullet
             
             bullet?.hitWall()
+        }
+        
+        // 玩家接触楼梯
+        if (bodyA.categoryBitMask == PhysicsCategory.player && bodyB.node?.name == "stairs") ||
+           (bodyB.categoryBitMask == PhysicsCategory.player && bodyA.node?.name == "stairs") {
+            
+            // 检查是否所有敌人都被击败
+            if enemies.isEmpty {
+                // 显示提示信息
+                gameUI.showMessage("按住楼梯区域进入下一层", duration: 2.0)
+                
+                // 延迟1秒后自动进入下一层
+                let wait = SKAction.wait(forDuration: 1.0)
+                let nextLevel = SKAction.run { [weak self] in
+                    self?.nextFloor()
+                }
+                run(SKAction.sequence([wait, nextLevel]))
+            } else {
+                gameUI.showMessage("击败所有敌人后才能前进！", duration: 2.0)
+            }
         }
     }
 }

@@ -22,8 +22,8 @@ class GameViewController: UIViewController {
             // 设置场景大小为视图大小
             scene.size = view.bounds.size
             
-            // 设置缩放模式
-            scene.scaleMode = .aspectFill
+            // 设置缩放模式 - 使用resizeFill确保完全填充屏幕
+            scene.scaleMode = .resizeFill
             
             // 呈现场景
             view.presentScene(scene)
@@ -33,6 +33,10 @@ class GameViewController: UIViewController {
             // 显示调试信息
             view.showsFPS = true
             view.showsNodeCount = true
+            
+            // 打印调试信息
+            print("View bounds: \(view.bounds)")
+            print("Scene size: \(scene.size)")
         }
     }
 

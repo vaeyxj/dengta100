@@ -32,53 +32,104 @@ class GameUI: SKNode {
     }
     
     private func setupUI() {
-        zPosition = 100
-        createStatusBar()
-        createHealthBar()
-        createAmmoDisplay()
-        createLevelAndExpBar()
-    }
-    
-    private func createStatusBar() {
-        statusBar = SKNode()
-        statusBar.position = CGPoint(x: 0, y: screenSize.height/2 - 40)
-        addChild(statusBar)
+        zPosition = 10000  // 设置极高的z值确保UI在最前面
         
-        let background = SKShapeNode(rect: CGRect(
-            x: -screenSize.width/2,
-            y: -20,
-            width: screenSize.width,
-            height: 40
-        ))
-        background.fillColor = UIColor.black.withAlphaComponent(0.5)
-        background.strokeColor = .clear
-        background.zPosition = 0
-        statusBar.addChild(background)
+        // 打印调试信息
+        print("GameUI screenSize: \(screenSize)")
+        
+        createSimpleUI()
     }
     
-    private func createHealthBar() {
+    private func createSimpleUI() {
+        // 创建一个全屏背景测试
+        let testBackground = SKShapeNode(rect: CGRect(
+            x: -screenSize.width/2,
+            y: -screenSize.height/2,
+            width: screenSize.width,
+            height: screenSize.height
+        ))
+        testBackground.fillColor = UIColor.red.withAlphaComponent(0.1)
+        testBackground.strokeColor = UIColor.red
+        testBackground.lineWidth = 2
+        testBackground.zPosition = 1
+        testBackground.name = "testBackground"
+        addChild(testBackground)
+        
+        // 顶部状态栏
+        let topBar = SKShapeNode(rect: CGRect(
+            x: -screenSize.width/2,
+            y: screenSize.height/2 - 60,
+            width: screenSize.width,
+            height: 60
+        ))
+        topBar.fillColor = UIColor.black.withAlphaComponent(0.7)
+        topBar.strokeColor = .clear
+        topBar.zPosition = 5
+        addChild(topBar)
+        
+        // 血条
         healthBar = HealthBar(size: CGSize(width: 200, height: 20))
         healthBar.position = CGPoint(x: -screenSize.width/2 + 120, y: screenSize.height/2 - 30)
+        healthBar.zPosition = 10
         addChild(healthBar)
-    }
-    
-    private func createAmmoDisplay() {
+        
+        // 弹药显示
         ammoDisplay = AmmoDisplay()
         ammoDisplay.position = CGPoint(x: screenSize.width/2 - 80, y: screenSize.height/2 - 30)
+        ammoDisplay.zPosition = 10
         addChild(ammoDisplay)
-    }
-    
-    private func createLevelAndExpBar() {
+        
+        // 等级标签
         levelLabel = SKLabelNode(text: "LV.1")
         levelLabel.fontName = "Arial-Bold"
-        levelLabel.fontSize = 16
+        levelLabel.fontSize = 18
         levelLabel.fontColor = .white
-        levelLabel.position = CGPoint(x: -screenSize.width/2 + 50, y: screenSize.height/2 - 60)
+        levelLabel.position = CGPoint(x: -screenSize.width/2 + 50, y: screenSize.height/2 - 50)
+        levelLabel.zPosition = 10
         addChild(levelLabel)
         
+        // 经验条
         expBar = ExperienceBar(size: CGSize(width: 150, height: 8))
-        expBar.position = CGPoint(x: -screenSize.width/2 + 150, y: screenSize.height/2 - 55)
+        expBar.position = CGPoint(x: -screenSize.width/2 + 150, y: screenSize.height/2 - 50)
+        expBar.zPosition = 10
         addChild(expBar)
+        
+        // 底部控制说明
+        let controlHint = SKLabelNode(text: "左侧移动 | 右侧射击")
+        controlHint.fontName = "Arial"
+        controlHint.fontSize = 16
+        controlHint.fontColor = UIColor.white.withAlphaComponent(0.8)
+        controlHint.position = CGPoint(x: 0, y: -screenSize.height/2 + 30)
+        controlHint.zPosition = 10
+        addChild(controlHint)
+        
+        // 左下角摇杆指示
+        let joystickHint = SKShapeNode(circleOfRadius: 50)
+        joystickHint.fillColor = UIColor.white.withAlphaComponent(0.1)
+        joystickHint.strokeColor = UIColor.white.withAlphaComponent(0.3)
+        joystickHint.lineWidth = 2
+        joystickHint.position = CGPoint(x: -screenSize.width/2 + 80, y: -screenSize.height/2 + 80)
+        joystickHint.zPosition = 5
+        addChild(joystickHint)
+        
+        // 右侧射击区域指示
+        let shootHint = SKShapeNode(rect: CGRect(
+            x: screenSize.width/4,
+            y: -screenSize.height/2,
+            width: screenSize.width/4,
+            height: screenSize.height
+        ))
+        shootHint.fillColor = UIColor.red.withAlphaComponent(0.05)
+        shootHint.strokeColor = UIColor.red.withAlphaComponent(0.2)
+        shootHint.lineWidth = 1
+        shootHint.position = CGPoint(x: 0, y: 0)
+        shootHint.zPosition = 5
+        addChild(shootHint)
+        
+        print("UI elements created with positions:")
+        print("- Health bar: \(healthBar.position)")
+        print("- Ammo display: \(ammoDisplay.position)")
+        print("- Level label: \(levelLabel.position)")
     }
     
     func updatePlayerStatus(hp: Int, maxHP: Int, level: Int, exp: Int, maxExp: Int) {
